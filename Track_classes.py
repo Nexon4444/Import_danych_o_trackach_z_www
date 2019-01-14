@@ -78,8 +78,13 @@ class CSVimporter(object):
     
         self.imported_val_arr = self.imported_data_frame.values
         self.www_adresses = self.imported_val_arr
-        self.soups = self.www_adresses
+        self._last_poz = 0
         self.createDates = self.imported_val_arr
+        self.last_pair = self.next_pair()
+        # self.last_soup = self.import_next(self._last_poz)
+        # self.last_createDate = self.next_soup(self._last_poz)
+        # self.soups = self.www_adresses
+
     
     @property
     def login(self):
@@ -111,23 +116,35 @@ class CSVimporter(object):
 
     @imported_data_frame.setter
     def imported_data_frame(self, value):
-        # self._imported_data_frame = list()
-        # for pair in value:
-            # adr = "https://sirius.na.sas.com/Sirius/ShowTrack.aspx?trknum="+pair[0].encode("utf-8")
 
         data = pd.read_csv(value, delimiter=';')
         self._imported_data_frame = pd.DataFrame(data)
 
-
     @property
-    def soups(self):
-        return self._soups
+    def last_pair(self):
+        return self._last_pair
 
-    @soups.setter
-    def soups(self, value):
-        self._soups = list()
-        for row in value:
-            self._soups.append(row)
+    @last_pair.setter
+    def last_pair(self, value):
+        self._last_pair = value
+
+    def next_pair(self):
+        if self._last_poz == len(self.imported_val_arr):
+            self.last_pair = None
+            return self.last_pair
+
+        self.last_pair = (self.create_soup(self.www_adresses[self._last_poz]), self.imported_val_arr[self._last_poz][1])
+        self._last_poz = self._last_poz + 1
+        return self.last_pair
+    # @property
+    # def soups(self):
+    #     return self._soups
+    #
+    # @soups.setter
+    # def soups(self, value):
+    #     self._soups = list()
+    #     for row in value:
+    #         self._soups.append(row)
 
 
     @property
@@ -139,6 +156,22 @@ class CSVimporter(object):
         self._imported_val_arr = value
 
     @property
+    def last_soup(self):
+        return self._last_soup
+
+    @last_soup.setter
+    def last_soup(self, value):
+        self._last_soup = value
+
+    @property
+    def last_createDate(self):
+        return self._createDate
+
+    @last_createDate.setter
+    def last_createDate(self, value):
+        self._createDate = value
+
+    @property
     def www_adresses(self):
         return self._www_adresses
     
@@ -147,15 +180,15 @@ class CSVimporter(object):
         self._www_adresses = list()
         for pair in self.imported_val_arr:
             self._www_adresses.append("https://sirius.na.sas.com/Sirius/ShowTrack.aspx?trknum="+str(pair[0]))
-    @property
-    def soups(self):
-        return self._soups
-    
-    @soups.setter
-    def soups(self, value):
-        self._soups = list()
-        for adr in self.www_adresses:
-            self._soups.append(self.create_soup(adr))
+    # @property
+    # def soups(self):
+    #     return self._soups
+    #
+    # @soups.setter
+    # def soups(self, value):
+    #     self._soups = list()
+    #     for adr in self.www_adresses:
+    #         self._soups.append(self.create_soup(adr))
 
     @property
     def createDates(self):

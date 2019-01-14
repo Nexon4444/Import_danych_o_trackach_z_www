@@ -71,44 +71,15 @@ def main():
     exporter = CSVexporter(output_file)
 
     i = 0
-    for soup, createDate in zip(importer.soups, importer.createDates):
+    while importer.last_pair != None :
         print ("analyzing track: " + str(i))
-        t = Track(soup, createDate)
+        print importer.last_pair[1]
+        t = Track(importer.last_pair[0], importer.last_pair[1])
         exporter.append(t)
-        i = i +1
+        importer.next_pair()
+        i = i + 1
     print "exporting to file: " + str(output_file)
     exporter.extract_to_csv()
-
-# def main():
-#     if len(sys.argv) < 3:
-#         if (sys.argv[1] == "-h"):
-#             print "usage: [username] [password] [output_file] [web_adress1] <optional> [web_adress2] [web_address3]...."
-#         else:
-#             raise (Exception("not enough arguments"))
-#
-#     exporter = CSVexporter(sys.argv[3])
-#     for input_file in sys.argv[4:]:
-#         resp = requests.get(input_file,
-#                             auth=HTTPBasicAuth(sys.argv[1], sys.argv[2]))
-#                             # auth=HTTPBasicAuth('maciej.kutrowski@sas.com', 'Xenobiot2357!'))
-#         html = resp.text
-#         # print html
-#         soup = BeautifulSoup(html, features="html.parser")
-#
-#         # print(soup.prettify())
-#         # exit()
-#         if not html:  ##sprawdzenie czy plik jest dostepny
-#             print('----------------------------------------------------------\n'
-#                   '-- [ ERROR ] {} - web adress not found!\n'
-#                   '----------------------------------------------------------\n'
-#                   .format(input_file))
-#             sys.exit()
-#
-#         # soup = BeautifulSoup(input_file, 'html.parser')
-#         t = Track(soup)
-#         exporter.append(t)
-#
-#     exporter.extract_to_csv()
 
 if __name__ == "__main__":
     main()
