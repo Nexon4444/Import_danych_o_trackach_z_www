@@ -12,12 +12,13 @@ import pandas as pd
 regex_dict = dict()
 
 
-def create_raw_data(SAS_status_list=list(), SAS_assigned_to_list=list(), SAS_classification_list=list(), SAS_comment_list=list(), SAS_component_list=list(),
-                    SAS_environment_list=list(), SAS_impact_range_list=list(), SAS_pool_list=list(), SAS_priority_list=list(),
+def create_raw_data(SAS_status_list=list(), SAS_assigned_to_list=list(), SAS_classification_list=list(), SAS_comment_list=list(),
+                    SAS_component_list=list(),  SAS_environment_list=list(), SAS_impact_range_list=list(), SAS_pool_list=list(), SAS_priority_list=list(),
                     SAS_severity_list=list(), SAS_sub_classification_list=list(), SAS_sub_status_list=list(), SNOW_INC_list=list(),
                     SNOW_ITASK_list=list(), SNOW_REF_MSG_list=list(), custCompany_list=list(), custName_list=list(), lstPgUpdated_list=list(),
                     modifiedBy_list=list(), page_number_list=list(), page_text_list=list(), primOwnCompany_list=list(), primOwnName_list=list(),
-                    priority_list=list(), title_list=list(), trknum_list=list(), createDate_list=list()):
+                    priority_list=list(), title_list=list(), trknum_list=list(), createDate_list=list(), SAS_description_list=list(), SAS_resolution_description_list=list()):
+
 
     # if not is_contents_set:
     #     page_number_list = list()
@@ -49,6 +50,8 @@ def create_raw_data(SAS_status_list=list(), SAS_assigned_to_list=list(), SAS_cla
                 'SAS_sub_classification': SAS_sub_classification_list,
                 'SAS_severity': SAS_severity_list,
                 'SAS_impact_range': SAS_impact_range_list,
+                'SAS_description': SAS_description_list,
+                'SAS_resolution_description': SAS_resolution_description_list,
 
                 'page_text': page_text_list,
                 'title': title_list,
@@ -70,7 +73,8 @@ def create_raw_data(SAS_status_list=list(), SAS_assigned_to_list=list(), SAS_cla
 
 # dziedziczenie po klasie "object" po to zeby dzialaly properties
 class CSVimporter(object):
-    def __init__(self, login, passwd, import_file):
+    def __init__(self, login, passwd, import_file, separator=";"):
+        self.separator = separator
         self.login = login
         self.passwd = passwd
         self.import_file = import_file
@@ -81,6 +85,7 @@ class CSVimporter(object):
         self._last_poz = 0
         self.createDates = self.imported_val_arr
         self.last_pair = self.next_pair()
+
         # self.last_soup = self.import_next(self._last_poz)
         # self.last_createDate = self.next_soup(self._last_poz)
         # self.soups = self.www_adresses
@@ -117,7 +122,7 @@ class CSVimporter(object):
     @imported_data_frame.setter
     def imported_data_frame(self, value):
 
-        data = pd.read_csv(value, delimiter=';')
+        data = pd.read_csv(value, delimiter=self.separator)
         self._imported_data_frame = pd.DataFrame(data)
 
     @property
@@ -200,6 +205,13 @@ class CSVimporter(object):
         for val in value:
             self._createDates.append(val[1])
 
+    @property
+    def separator(self):
+        return self._separator
+
+    @separator.setter
+    def separator(self, value):
+        self._separator = value
 
     def create_soup(self, adr):
         print ("requesting webpage: " + adr)
@@ -211,12 +223,12 @@ class CSVimporter(object):
 
 
 class CSVexporter(object):
-    def __init__(self, name, track=None):
+    def __init__(self, name, separator):
         self.contents_flag = False
         self.name = name
         # if track is None:
         self.raw_data = create_raw_data()
-
+        self.separator = separator
         # else:
         #     self.raw_data = track.raw_data
     @property
@@ -243,6 +255,14 @@ class CSVexporter(object):
     def raw_data(self, raw_data_cp):
         self._raw_data = raw_data_cp
 
+    @property
+    def separator(self):
+        return self._separator
+
+    @separator.setter
+    def separator(self, value):
+        self._separator = value
+
     def append(self, track):
         # if not self.raw_data:
         self._merge_2dicts_of_lists(self.raw_data, track.raw_data)
@@ -257,7 +277,7 @@ class CSVexporter(object):
 
     def extract_to_csv(self):
         df = pd.DataFrame(self.raw_data)
-        df.to_csv(str(self.name), index=False, sep=";", encoding="UTF-8")
+        df.to_csv(str(self.name), index=False, sep=self.separator, encoding="UTF-8")
         # df.to_csv(self.name.encode('utf-8'), index=False)
 
 class Track(object):
@@ -447,6 +467,8 @@ class Track(object):
         regex_dict['SAS-sub_classification'] = re.compile('(?<=SAS-sub_classification:\s)(.*)(?=\])')
         regex_dict['SAS-severity'] = re.compile('(?<=SAS-severity:\s)(.*)(?=\])')
         regex_dict['SAS-impact_range'] = re.compile('(?<=SAS-impact_range:\s)(.*)(?=\])')
+        regex_dict['SAS-description']= re.compile('(?<=SAS-description:\s)(.*)(?=\])')
+        regex_dict['SAS-resolution_description'] = re.compile('(?<=SAS-resolution_description:\s)(.*)(?=\])')
 
         regex_dict['page_text_from'] = re.compile('(From:|'
                                                   'Od:)')
@@ -510,6 +532,8 @@ class Track(object):
         SAS_severity_list = list()
         SAS_impact_range_list = list()
         page_text_list = list()
+        SAS_description_list = list()
+        SAS_resolution_description_list = list()
 
 
         for page in self.pageInfoList:
@@ -530,6 +554,8 @@ class Track(object):
             SAS_sub_classification_list.append(page.SAS_sub_classification)
             SAS_severity_list.append(page.SAS_severity)
             SAS_impact_range_list.append(page.SAS_impact_range)
+            SAS_description_list.append(page.SAS_description)
+            SAS_resolution_description_list.append(page.SAS_resolution_description)
 
         raw_data = create_raw_data(SAS_status_list, SAS_assigned_to_list, SAS_classification_list, SAS_comment_list,
                                    SAS_component_list, SAS_environment_list, SAS_impact_range_list, SAS_pool_list,
@@ -537,7 +563,8 @@ class Track(object):
                                    SAS_sub_status_list, SNOW_INC_list, SNOW_ITASK_list, SNOW_REF_MSG_list,
                                    custCompany_list, custName_list, lstPgUpdated_list, modifiedBy_list,
                                    page_number_list, page_text_list, primOwnCompany_list, primOwnName_list,
-                                   priority_list, title_list, trknum_list, createDate_list)
+                                   priority_list, title_list, trknum_list, createDate_list, SAS_description_list,
+                                   SAS_resolution_description_list)
 
         return raw_data
         # df = pd.DataFrame(raw_data)
@@ -584,7 +611,8 @@ class Update(object):
         self.SAS_sub_classification = tag_pageData
         self.SAS_severity = tag_pageData
         self.SAS_impact_range = tag_pageData
-
+        self.SAS_description = tag_pageData
+        self.SAS_resolution_description = tag_pageData
         self.Area = None
 
         self.page_text = tag_pageData
@@ -602,7 +630,9 @@ class Update(object):
                          self.SAS_classification,
                          self.SAS_sub_classification,
                          self.SAS_severity,
-                         self.SAS_impact_range]
+                         self.SAS_impact_range,
+                         self.SAS_description,
+                         self.SAS_resolution_description]
 
     @property
     def tag_pretext(self):
@@ -773,6 +803,22 @@ class Update(object):
     @SAS_impact_range.setter
     def SAS_impact_range(self, tag_pageData):
         self._SAS_impact_range = self.get_reg_tag("span", tag_pageData, "SAS-impact_range")
+
+    @property
+    def SAS_description(self):
+        return self._SAS_description
+
+    @SAS_description.setter
+    def SAS_description(self, tag_pageData):
+        self._SAS_description = self.get_reg_tag("span", tag_pageData, "SAS-description")
+
+    @property
+    def SAS_resolution_description(self):
+        return self._SAS_resolution_description
+
+    @SAS_resolution_description.setter
+    def SAS_resolution_description(self, tag_pageData):
+        self._SAS_resolution_description = self.get_reg_tag("span", tag_pageData, "SAS-resolution_description")
 
     @property
     def page_text(self):
